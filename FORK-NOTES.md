@@ -6,13 +6,32 @@
 
 ## 与上游的差异
 
-当前 `main` 相对上游 `deepseek-ai/chat-demo@5d5dd75` 只有一个提交：
+当前 `main` 相对上游 `deepseek-ai/chat-demo@5d5dd75` 有 2 个提交，分两类：
 
-| commit | 内容 | 原因 |
-| --- | --- | --- |
-| [`f9c1b38`](../../commit/f9c1b38) | 用 `[...arr].reverse()` / `[...arr].sort()` 替换 `toReversed()` / `toSorted()` | 这两个 ES2023 方法需要 Chrome 110+，但构建目标是 `chrome >= 105` |
+### 一、兼容性修复（建议回馈上游）
 
-### 为什么要改
+| commit | 内容 |
+| --- | --- |
+| [`f9c1b38`](../../commit/f9c1b38) | 用 `[...arr].reverse()` / `[...arr].sort()` 替换 `toReversed()` / `toSorted()` |
+
+原因：这两个 ES2023 方法需要 Chrome 110+，但 `rspack.config.ts` 的构建目标是 `chrome >= 105`，存在 105–109 的版本缺口。
+
+### 二、自有功能（本 fork 独有）
+
+| commit | 内容 |
+| --- | --- |
+| [`1234750`](../../commit/1234750) | 设置中支持切换对话模型（`deepseek-flash` / `deepseek-v4-pro`） |
+
+改动点：
+
+- `services/settings.ts`：新增 `model` 设置，localStorage 持久化，默认 `deepseek-flash`，非法值回退默认
+- `services/chat/store.ts`：用 `currentModel()` 读取当前设置替代写死的 `MODEL` 常量；新会话、重新生成、请求三处生效，已完成的回复保留其生成时的模型
+- `components/settings/SettingsDialog.tsx`：「通用设置」新增模型选择行
+- `i18n/{zh,en}.ts`：中英文案
+
+真机验证：切换后请求体 `model` 由 `deepseek-flash` 变为 `deepseek-v4-pro`，服务端正常返回；刷新后保持，切回亦恢复默认。
+
+### 兼容性修复的来龙去脉
 
 在 Android WebView **105–109** 上（实测设备：Xiaomi M2007J1SC / Android 13 / WebView Chrome 108）：
 
@@ -39,9 +58,9 @@ preparing = false                           // 984
 上游仓库关闭了 Pull Requests 与 Issues（`has_pull_requests: false`、`has_issues: false`），任何人都无法提交 PR。因此改为在本 fork 上维护：
 
 - 补丁文件：[`0001-fix-es2023-array-methods.patch`](https://github.com/HLJ1997/chat-demo-android-shell/blob/main/0001-fix-es2023-array-methods.patch)
-- 对比链接：[`main...f9c1b38`](https://github.com/deepseek-ai/chat-demo/compare/main...HLJ1997:f9c1b38)
+- 兼容性修复的对比：[`5d5dd75...f9c1b38`](https://github.com/deepseek-ai/chat-demo/compare/main...HLJ1997:f9c1b38)
 
-若上游将来开启 PR，可直接用 [此分支比较](https://github.com/deepseek-ai/chat-demo/compare/main...HLJ1997:fix/es2023-array-methods) 提交。
+若上游将来开启 PR，可只提交兼容性修复那一个提交（`fix/es2023-array-methods` 分支仍保留），自有功能不必上游化。
 
 ## 同步上游更新
 
@@ -49,20 +68,27 @@ preparing = false                           // 984
 git remote add upstream https://github.com/deepseek-ai/chat-demo.git   # 首次
 git fetch upstream
 git checkout main
-git merge upstream/main        # 冲突通常只在被改动的两行
-pnpm install && pnpm build     # 验证构建
+git merge upstream/main        # 冲突通常只出现在兼容性修复那两行
+pnpm install && pnpm type && pnpm lint
+pnpm build                     # 验证构建
 git push origin main
 ```
 
-合并后记得核对补丁是否仍然存在——如果上游自己修了这两处，本 fork 的差异就可以丢弃（见下）。
+合并后核对两件事：
+
+1. 兼容性修复是否仍需要——若上游已自行修复（提高 target、加 polyfill 或同样替换），把 `f9c1b38` 的改动丢掉即可；
+2. 自有功能是否被上游的接口变化打破——模型切换依赖 `CreateMessageRequest.model` 与 `ChatModel` 类型，若上游改动这些字段需要同步调整。
 
 ## 何时可以废弃这个 fork
 
-上游满足以下任一条件时，本 fork 不再需要：
+分两部分看：
 
-1. 把 `rspack.config.ts` 的 `targets` 提高到 `chrome >= 110`；
-2. 或加了相应 polyfill；
-3. 或自行做了相同的两行替换。
+| 部分 | 废弃条件 |
+| --- | --- |
+| 兼容性修复 | 上游把 `targets` 提到 `chrome >= 110`、或加了 polyfill、或自行做了同样的替换 |
+| 自有功能（模型切换） | 上游自己支持了模型选择，且交互符合需要 |
+
+两者都满足时，本 fork 可回归纯上游；否则继续以 fork 为主。上游目前关闭了 PR/Issue，短期内无法回馈，因此兼容性修复会一直保留在本 fork。
 
 ## 构建
 
