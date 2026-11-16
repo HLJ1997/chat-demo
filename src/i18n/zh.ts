@@ -86,7 +86,6 @@ export const zh = {
   backupInvalidFiles: '文件中的附件数据已损坏，无法导入',
   settingsLocalePreference: '语言',
   settingsModel: '默认模型',
-  settingsModelDescription: '新对话默认使用该模型（Flash 支持深度思考与图片）；已有对话可在输入框下方单独切换。',
   sessionModel: '本对话的模型',
   modelNameFlash: 'Flash',
   modelNameV4Pro: 'V4 Pro',

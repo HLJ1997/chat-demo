@@ -91,7 +91,6 @@ export const en = {
   backupInvalidFiles: 'The attachment data in this file is corrupted and cannot be imported.',
   settingsLocalePreference: 'Language',
   settingsModel: 'Default model',
-  settingsModelDescription: 'New chats start with this model (Flash supports thinking and images); each existing chat can be switched below the input.',
   sessionModel: 'Model for this chat',
   modelNameFlash: 'Flash',
   modelNameV4Pro: 'V4 Pro',

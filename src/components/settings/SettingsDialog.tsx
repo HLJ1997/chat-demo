@@ -304,7 +304,6 @@ const ModelSetting = () => {
   return (
     <SettingCell
       label={t('settingsModel')}
-      description={t('settingsModelDescription')}
       status={null}
       action={
         <Select
