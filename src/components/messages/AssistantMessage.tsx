@@ -141,6 +141,11 @@ export const AssistantMessage = memo(function AssistantMessage({
       {streaming ? null : (
         <div className={styles.bottom}>
           <BranchSwitcher versions={versions} disabled={busy} onSelect={onSelectVersion} />
+          {message.model ? (
+            <span className={styles.modelTag} title={t('messageModelTitle')}>
+              {message.model === 'deepseek-v4-pro' ? t('modelNameV4Pro') : t('modelNameFlash')}
+            </span>
+          ) : null}
           <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
             {copyText ? <CopyButton text={copyText} /> : null}
             {responseText && !refused ? (

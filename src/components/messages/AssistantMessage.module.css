@@ -100,6 +100,14 @@
   transition: opacity var(--ds-transition-duration) var(--ds-ease-in-out);
 }
 
+/* 模型标记：低调的说明文字，和操作按钮同一行时排在前面 */
+.modelTag {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
 .alwaysShow {
   opacity: 1;
 }
