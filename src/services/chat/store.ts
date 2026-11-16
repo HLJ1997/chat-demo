@@ -604,6 +604,11 @@ export const sendMessage = (targetSessionId: string | null) => {
   if (!current) {
     return false
   }
+  const model = sessionModel(current)
+  // 未记录模型的旧会话（含导入的历史）在首次发送时固化，避免之后跟随默认模型漂移。
+  if (current.model === undefined) {
+    updateSession(sessionId, (session) => ({ ...session, model }))
+  }
   const history = getVisibleMessages(current)
   const question: UserMessage = {
     id: createId(),
@@ -619,7 +624,7 @@ export const sendMessage = (targetSessionId: string | null) => {
     })),
     createdAt: now,
   }
-  const reply = createReply(sessionModel(current))
+  const reply = createReply(model)
   updateSession(sessionId, (session) => ({
     ...appendBranch(session, history.at(-1)?.id ?? null, [question, reply]),
     updatedAt: now,
