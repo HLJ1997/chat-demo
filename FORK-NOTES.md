@@ -6,7 +6,7 @@
 
 ## 与上游的差异
 
-当前 `main` 相对上游 `deepseek-ai/chat-demo@5d5dd75` 有 3 个提交，分两类：
+当前 `main` 相对上游 `deepseek-ai/chat-demo@5d5dd75` 有 4 个提交，分两类：
 
 ### 一、兼容性修复（建议回馈上游）
 
@@ -22,6 +22,7 @@
 | --- | --- |
 | [`1234750`](../../commit/1234750) | 设置中支持切换对话模型（`deepseek-flash` / `deepseek-v4-pro`） |
 | [`37bb008`](../../commit/37bb008) | 回复下方显示生成该回复所用的模型（Flash / V4 Pro） |
+| [`a34b07e`](../../commit/a34b07e) | 会话级模型记忆：每个会话记住自己的模型，切换只影响当前会话 |
 
 改动点（`1234750` 模型切换）：
 
@@ -33,14 +34,25 @@
 改动点（`37bb008` 回复标记）：
 
 - `components/messages/AssistantMessage.tsx`：底部操作行（分支切换器之后）显示模型短名，带 tooltip
-- `components/messages/AssistantMessage.module.css`：`.modelTag` 用 `--dsw-alias-label-tertiary`，随明暗主题变化
+- `components/messages/AssistantMessage.module.css`：`.modelTag` 用 `--dsw-alias-label-secondary`，随明暗主题变化
 - `i18n/{zh,en}.ts`：短名 `Flash` / `V4 Pro` 与 tooltip 文案
+
+改动点（`a34b07e` 会话级模型记忆）：
+
+- `services/chat/types.ts`：`Session` 增加可选 `model`
+- `services/chat/store.ts`：`sessionModel(session)` 取会话模型、缺省回退设置默认；新建会话写入默认模型；`createReply(model)` 由调用方传入（发送/重新生成/编辑三处）；新增 `setSessionModel`，生成中或删除中拒绝切换
+- `components/chatInput/ChatInput.tsx`：工具条新增会话模型选择器；`sessionId` 为 null（新对话）时改的是设置默认模型
+- 设置里的模型项改为「默认模型」，说明为「新对话默认使用该模型；已有对话可在输入框下方单独切换」
 
 ### 已知局限
 
-导入的历史对话**不保留模型字段**（归档格式本身不含，`toLocal.ts` 会置为 `null`），因此这类回复不显示模型标记。这是导入功能的既有设计，不是本 fork 引入的。
+1. 导入的历史对话**不保留模型字段**（归档格式本身不含，`toLocal.ts` 会置为 `null`），因此这类回复不显示模型标记。这是导入功能的既有设计，不是本 fork 引入的。
+2. 未记录 `model` 的会话（旧会话、导入会话）跟随**默认模型**，所以之后修改默认模型时，这些会话显示的选择也会跟着变；在会话内切换一次后即固定。
+3. 窄屏（约 393px）下工具条可用宽度 212px，三个控件带文字需要 255px，因此「深度思考 / 智能搜索」会按项目既有机制折叠为图标（tooltip 与 `aria-label` 保留，模型选择器仍显示文字）。
 
 真机验证：模型切换后请求体 `model` 由 `deepseek-flash` 变为 `deepseek-v4-pro`，服务端正常返回；刷新后保持，切回亦恢复默认。回复标记在 `deepseek-flash` 回复上显示「Flash」、`deepseek-v4-pro` 上显示「V4 Pro」，`model: null` 的导入会话无标记。
+
+会话级记忆验证：A 会话切到 V4 Pro 后，全局默认仍为 flash、B/C 会话仍为 Flash、重开 A 仍为 V4 Pro；刷新后 `session.model` 已落库（IndexedDB），请求体为 `deepseek-v4-pro`；新对话跟随默认模型。
 
 ### 兼容性修复的来龙去脉
 
