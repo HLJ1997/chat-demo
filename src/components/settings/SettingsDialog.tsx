@@ -97,8 +97,11 @@ const SettingsContent = () => {
         <div role="tabpanel" className={styles.content}>
           {section === 'general' ? (
             <>
+              <SectionLabel label={t('settingsSectionAppearance')} first />
               <ThemeSetting />
+              <SectionLabel label={t('settingsSectionConversation')} />
               <ModelSetting />
+              <SectionLabel label={t('settingsSectionLanguageRegion')} />
               <LocaleSetting />
               <TtsVoiceSetting />
               <LocationSetting />
@@ -106,6 +109,7 @@ const SettingsContent = () => {
           ) : (
             <>
               <ApiKeyField editor={apiKeyEditor} />
+              <SectionLabel label={t('settingsSectionHistory')} />
               <ImportHistory historyImport={historyImport} disabled={historyBusy} />
               <ExportHistory disabled={historyBusy} />
               <SettingCell
@@ -293,7 +297,7 @@ const LocaleSetting = () => {
   )
 }
 
-/** 对话模型：deepseek-flash（默认，支持深度思考与图片）/ deepseek-v4-pro */
+/** 默认模型：决定新对话使用哪个模型；已有对话各自记住自己的选择 */
 const ModelSetting = () => {
   const t = useTranslate()
   const model = useSettings((state) => state.model)
@@ -307,8 +311,8 @@ const ModelSetting = () => {
           ariaLabel={t('settingsModel')}
           value={model}
           options={[
-            { value: 'deepseek-flash', label: t('settingsModelFlash') },
-            { value: 'deepseek-v4-pro', label: t('settingsModelV4Pro') },
+            { value: 'deepseek-flash', label: t('modelNameFlash') },
+            { value: 'deepseek-v4-pro', label: t('modelNameV4Pro') },
           ]}
           onChange={setModel}
         />
@@ -430,8 +434,14 @@ const errorStatus = (key: TranslationKey, error: unknown): Status => ({
   error: true,
 })
 
-const SettingCell = ({
-  label,
+/** 分组标题：把相关设置聚在一起；首个分组不留顶部间距 */
+const SectionLabel = ({ label, first = false }: { label: string; first?: boolean }) => (
+  <div className={clsx(styles.sectionLabel, first && styles.sectionLabelFirst)} role="presentation">
+    {label}
+  </div>
+)
+
+const SettingCell = ({  label,
   description,
   status,
   action,

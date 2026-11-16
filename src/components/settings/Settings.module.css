@@ -84,6 +84,21 @@
   }
 }
 
+/* 分组标题：小号弱化文字，把设置分成几组；分组之间用上间距分隔 */
+.sectionLabel {
+  flex-shrink: 0;
+  padding: 18px 0 2px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.4px;
+}
+
+.sectionLabelFirst {
+  padding-top: 2px;
+}
+
 .row {
   display: flex;
   align-items: center;
@@ -113,16 +128,18 @@
 }
 
 .locationCell .text {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
+  min-width: 140px;
   padding-right: 8px;
 }
 
 .locationSelectors {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: flex-end;
   gap: 16px;
+  row-gap: 8px;
   min-width: 0;
   max-width: 100%;
 }
@@ -133,8 +150,10 @@
   text-align: start;
 }
 
-.provinceSelect {
-  width: 159px;
+/* 省份下拉要放下「请选择省份/地区」这类最长占位文案：加宽并压缩右侧箭头留白 */
+.locationSelectors > .provinceSelect {
+  width: 176px;
+  padding-right: 34px;
 }
 
 .locationSelectors > .citySelect {
