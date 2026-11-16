@@ -22,6 +22,7 @@ import {
   isChineseBrowser,
   setLocale,
   setLocation,
+  setModel,
   setThemePreference,
   setTtsVoice,
   useSettings,
@@ -97,6 +98,7 @@ const SettingsContent = () => {
           {section === 'general' ? (
             <>
               <ThemeSetting />
+              <ModelSetting />
               <LocaleSetting />
               <TtsVoiceSetting />
               <LocationSetting />
@@ -291,9 +293,32 @@ const LocaleSetting = () => {
   )
 }
 
-/** 朗读音色：stella（海星，女声）/ tide（暗潮，男声） */
-const TtsVoiceSetting = () => {
+/** 对话模型：deepseek-flash（默认，支持深度思考与图片）/ deepseek-v4-pro */
+const ModelSetting = () => {
   const t = useTranslate()
+  const model = useSettings((state) => state.model)
+  return (
+    <SettingCell
+      label={t('settingsModel')}
+      description={t('settingsModelDescription')}
+      status={null}
+      action={
+        <Select
+          ariaLabel={t('settingsModel')}
+          value={model}
+          options={[
+            { value: 'deepseek-flash', label: t('settingsModelFlash') },
+            { value: 'deepseek-v4-pro', label: t('settingsModelV4Pro') },
+          ]}
+          onChange={setModel}
+        />
+      }
+    />
+  )
+}
+
+/** 朗读音色：stella（海星，女声）/ tide（暗潮，男声） */
+const TtsVoiceSetting = () => {  const t = useTranslate()
   const ttsVoice = useSettings((state) => state.ttsVoice)
   return (
     <SettingCell
