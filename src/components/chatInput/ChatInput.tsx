@@ -7,9 +7,9 @@ import {
   IconStopFill16,
   IconThinkOutline14,
 } from '../base/icons.js'
-import { setSearch, setThinking, useSettings } from '../../services/settings.js'
+import { setModel, setSearch, setThinking, useSettings } from '../../services/settings.js'
 import { useIsMobile } from '../../app/viewport.js'
-import { sendMessage, stopReply, useChatStore } from '../../services/chat/store.js'
+import { sendMessage, setSessionModel, stopReply, useChatStore } from '../../services/chat/store.js'
 import {
   addDraftFiles,
   EMPTY_DRAFT,
@@ -22,6 +22,7 @@ import {
 } from '../../services/chat/drafts.js'
 import { stopReadAloud } from '../../services/speech/readAloud.js'
 import { IconButton } from '../base/IconButton.js'
+import { Select } from '../base/Select.js'
 import { Tooltip } from '../base/Tooltip.js'
 import { ensureApiKey } from '../settings/settingsDialogState.js'
 import { DragMask, useFileDrop } from './DragMask.js'
@@ -53,6 +54,12 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const importingHistory = useChatStore((state) => state.importingHistory)
   const isMobile = useIsMobile()
   const search = useSettings((state) => state.search)
+  // 会话级模型：已有会话读自身记录，新会话跟随设置里的默认值
+  const sessionModel = useChatStore((state) =>
+    sessionId === null ? undefined : state.sessionCache[sessionId]?.model
+  )
+  const defaultModel = useSettings((state) => state.model)
+  const model = sessionModel ?? defaultModel
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const togglesRef = useRef<HTMLDivElement>(null)
@@ -226,6 +233,22 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               <span className={styles.toggleLabel}>{t('search')}</span>
             </button>
           </Tooltip>
+          <Select
+            ariaLabel={t('sessionModel')}
+            className={styles.modelSelect}
+            value={model}
+            options={[
+              { value: 'deepseek-flash', label: t('modelNameFlash') },
+              { value: 'deepseek-v4-pro', label: t('modelNameV4Pro') },
+            ]}
+            onChange={(value) => {
+              if (sessionId === null) {
+                setModel(value)
+              } else {
+                setSessionModel(sessionId, value)
+              }
+            }}
+          />
         </div>
         <div className={styles.right}>
           <VoiceButton

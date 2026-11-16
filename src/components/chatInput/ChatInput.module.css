@@ -255,6 +255,20 @@
   display: none;
 }
 
+/* 会话级模型选择：外观对齐左侧开关；窄屏时允许收缩，文字自动省略 */
+.toggles .modelSelect {
+  flex-shrink: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 32px 0 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 17px;
+  background-color: transparent;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
 .toggle {
   display: inline-flex;
   flex-shrink: 0;

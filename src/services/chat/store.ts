@@ -32,8 +32,12 @@ import {
   type UserMessage,
 } from './types.js'
 
-/** 当前对话模型：取设置里的选择，deepseek-flash 同时支持深度思考与图片输入 */
-const currentModel = (): ChatModel => useSettings.getState().model
+/**
+ * 会话使用的模型：会话自身记录优先，缺省（如导入的历史会话）回退到设置里的默认模型。
+ * deepseek-flash 同时支持深度思考与图片输入。
+ */
+const sessionModel = (session: Session | undefined): ChatModel =>
+  session?.model ?? useSettings.getState().model
 /** 所有生成请求统一携带的助手身份说明 */
 const SYSTEM_PROMPT = '该助手为DeepSeek，由深度求索公司创造。'
 /** 保留最近打开的详情；当前会话、生成中及尚未成功保存的会话不淘汰。 */
@@ -254,13 +258,13 @@ export const bindChatPersistence = () => {
 }
 
 /** 按当前开关创建回复：深度思考对应 thinking，智能搜索控制 deepseek_web_search。 */
-const createReply = (): AssistantMessage => {
+const createReply = (model: ChatModel): AssistantMessage => {
   const { thinking, search } = useSettings.getState()
   return {
     id: createId(),
     role: 'assistant',
     createdAt: Date.now(),
-    model: currentModel(),
+    model,
     thinking,
     search,
     prefix: true,
@@ -456,6 +460,21 @@ export const selectSession = (id: string) => {
   }
 }
 
+/**
+ * 切换单个会话使用的模型：只影响该会话之后的请求，其它会话不受影响。
+ * 生成中不允许切换，避免同一轮回复里模型变化。
+ */
+export const setSessionModel = (id: string, model: ChatModel) => {
+  if (get().importingHistory || deletingSessions.has(id) || getStreamController(id)) {
+    return
+  }
+  if (!getSession(id)) {
+    return
+  }
+  updateSession(id, (session) => ({ ...session, model }))
+  persist(id)
+}
+
 export const renameSession = (id: string, title: string) => {
   if (get().importingHistory || deletingSessions.has(id)) {
     return
@@ -570,6 +589,8 @@ export const sendMessage = (targetSessionId: string | null) => {
       updatedAt: now,
       messages: [],
       rootMessageId: null,
+      // 新会话沿用设置里的默认模型，之后各自记忆、互不影响
+      model: useSettings.getState().model,
     }
     sessionId = session.id
     touchSession(session.id)
@@ -598,7 +619,7 @@ export const sendMessage = (targetSessionId: string | null) => {
     })),
     createdAt: now,
   }
-  const reply = createReply()
+  const reply = createReply(sessionModel(current))
   updateSession(sessionId, (session) => ({
     ...appendBranch(session, history.at(-1)?.id ?? null, [question, reply]),
     updatedAt: now,
@@ -632,7 +653,7 @@ export const regenerateReply = (sessionId: string, messageId?: string) => {
     return
   }
   const history = path.slice(0, index - 1)
-  const reply = createReply()
+  const reply = createReply(sessionModel(session))
   updateSession(sessionId, (s) => ({
     ...appendBranch(s, question.id, [reply]),
     updatedAt: Date.now(),
@@ -664,7 +685,7 @@ export const editMessage = (sessionId: string, messageId: string, content: strin
     files: previous.files,
     createdAt: Date.now(),
   }
-  const reply = createReply()
+  const reply = createReply(sessionModel(session))
   updateSession(sessionId, (s) => ({
     ...appendBranch(s, path[index - 1]?.id ?? null, [question, reply]),
     updatedAt: Date.now(),
@@ -708,8 +729,8 @@ export const continueReply = (sessionId: string, messageId: string) => {
   const { thinking, search } = useSettings.getState()
   const reply: AssistantMessage = {
     ...previous,
-    // 未记录请求配置的回复，续写时使用默认模型和当前开关。
-    model: previous.model ?? currentModel(),
+    // 未记录请求配置的回复，续写时使用会话模型和当前开关。
+    model: previous.model ?? sessionModel(session),
     thinking: previous.thinking ?? thinking,
     search: previous.search ?? search,
     status: 'pending',
@@ -999,7 +1020,7 @@ const streamReply = async (sessionId: string, initial: AssistantMessage, request
         const events = streamMessage(
           useSettings.getState().apiKey ?? '',
           {
-            model: initial.model ?? currentModel(),
+            model: initial.model ?? sessionModel(getSession(sessionId)),
             system: SYSTEM_PROMPT,
             messages,
             thinking: { type: initial.thinking ? 'enabled' : 'disabled' },

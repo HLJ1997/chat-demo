@@ -114,6 +114,11 @@ export type Session = {
   messages: Message[]
   /** undefined 表示线性消息列表；null 表示空会话。 */
   rootMessageId?: string | null
+  /**
+   * 本会话使用的模型。缺省（导入的历史会话）时回退到设置里的默认模型；
+   * 会话内切换只影响该会话，不改变其它会话。
+   */
+  model?: ChatModel
 }
 
 /** 会话列表元数据；消息只在打开会话时加载。 */
