@@ -6,7 +6,7 @@
 
 ## 与上游的差异
 
-当前 `main` 相对上游 `deepseek-ai/chat-demo@5d5dd75` 有 2 个提交，分两类：
+当前 `main` 相对上游 `deepseek-ai/chat-demo@5d5dd75` 有 3 个提交，分两类：
 
 ### 一、兼容性修复（建议回馈上游）
 
@@ -21,15 +21,26 @@
 | commit | 内容 |
 | --- | --- |
 | [`1234750`](../../commit/1234750) | 设置中支持切换对话模型（`deepseek-flash` / `deepseek-v4-pro`） |
+| [`37bb008`](../../commit/37bb008) | 回复下方显示生成该回复所用的模型（Flash / V4 Pro） |
 
-改动点：
+改动点（`1234750` 模型切换）：
 
 - `services/settings.ts`：新增 `model` 设置，localStorage 持久化，默认 `deepseek-flash`，非法值回退默认
 - `services/chat/store.ts`：用 `currentModel()` 读取当前设置替代写死的 `MODEL` 常量；新会话、重新生成、请求三处生效，已完成的回复保留其生成时的模型
 - `components/settings/SettingsDialog.tsx`：「通用设置」新增模型选择行
 - `i18n/{zh,en}.ts`：中英文案
 
-真机验证：切换后请求体 `model` 由 `deepseek-flash` 变为 `deepseek-v4-pro`，服务端正常返回；刷新后保持，切回亦恢复默认。
+改动点（`37bb008` 回复标记）：
+
+- `components/messages/AssistantMessage.tsx`：底部操作行（分支切换器之后）显示模型短名，带 tooltip
+- `components/messages/AssistantMessage.module.css`：`.modelTag` 用 `--dsw-alias-label-tertiary`，随明暗主题变化
+- `i18n/{zh,en}.ts`：短名 `Flash` / `V4 Pro` 与 tooltip 文案
+
+### 已知局限
+
+导入的历史对话**不保留模型字段**（归档格式本身不含，`toLocal.ts` 会置为 `null`），因此这类回复不显示模型标记。这是导入功能的既有设计，不是本 fork 引入的。
+
+真机验证：模型切换后请求体 `model` 由 `deepseek-flash` 变为 `deepseek-v4-pro`，服务端正常返回；刷新后保持，切回亦恢复默认。回复标记在 `deepseek-flash` 回复上显示「Flash」、`deepseek-v4-pro` 上显示「V4 Pro」，`model: null` 的导入会话无标记。
 
 ### 兼容性修复的来龙去脉
 
